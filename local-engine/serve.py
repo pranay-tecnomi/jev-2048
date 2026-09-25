@@ -35,13 +35,24 @@ def main():
     compute_units = sys.argv[2] if len(sys.argv) > 2 else "cpu_gpu"
 
     try:
-        import laya_coreml as laya
-    except ImportError as e:
-        emit({"ok": False, "error": f"laya_coreml not installed: {e}"})
-        sys.exit(1)
+        import laya_mlx as laya
+    except ImportError:
+        try:
+            import laya_coreml as laya
+        except ImportError as e:
+            emit({"ok": False, "error": f"Neither laya_mlx nor laya_coreml installed: {e}"})
+            sys.exit(1)
 
     try:
-        agent = laya.load(model_dir, compute_units=compute_units)
+        import os
+        if laya.__name__ == 'laya_mlx' and os.path.isdir(model_dir) and not os.path.exists(os.path.join(model_dir, 'model.safetensors')):
+            # Node passed the CoreML directory; override to the HF repo so MLX works.
+            model_dir = 'convaiinnovations/laya'
+            
+        try:
+            agent = laya.load(model_dir, compute_units=compute_units)
+        except TypeError:
+            agent = laya.load(model_dir)
     except Exception as e:  # noqa: BLE001 - report any load failure to the caller
         emit({"ok": False, "error": f"Failed to load model: {e}"})
         sys.exit(1)
