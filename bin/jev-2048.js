@@ -67,6 +67,7 @@ async function main() {
   let score = 0
   let moves = 0
   let decisions = 0
+  let illegalCorrections = 0
   const latencies = []
   let lastDecision = null
   let running = true
@@ -75,6 +76,7 @@ async function main() {
     clearScreen()
     const avgLatencyMs =
       latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : null
+    const bestTile = board.reduce((max, r) => Math.max(max, ...r), 0)
     process.stdout.write(
       renderFrame({
         board,
@@ -85,6 +87,8 @@ async function main() {
         lastDecision,
         status,
         errorMessage,
+        illegalCorrections,
+        bestTile,
       })
     )
   }
@@ -123,6 +127,7 @@ async function main() {
         .slice()
         .sort((a, b) => (result.probabilities[b] || 0) - (result.probabilities[a] || 0))
       chosenDirection = ranked[0]
+      illegalCorrections += 1
     }
 
     const moveResult = move(board, chosenDirection)

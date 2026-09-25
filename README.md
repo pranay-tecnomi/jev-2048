@@ -7,30 +7,34 @@ state and legal moves are sent to Jev as a single `choice` question
 the board. Nothing is scripted or simulated.
 
 ```
-  JEV PLAYS 2048  —  terminal edition
-  State → Jev → Decision → Action, live
-
-  +------+------+------+------+
-  |      |  2   |  4   |      |
-  +------+------+------+------+
-  |  8   |      |      |      |
-  +------+------+------+------+
-  |      |      |      |      |
-  +------+------+------+------+
-  |      |      |      |      |
-  +------+------+------+------+
-
-  SCORE 24    MOVES 9    DECISIONS 9    AVG LATENCY 340ms
-
-  JEV  chose  ← LEFT   (312ms)
-
-    ↑ UP      ████░░░░░░░░░░░░░░░░░░░░  12%
-    ↓ DOWN    █████░░░░░░░░░░░░░░░░░░░  15%
-  > ← LEFT    ███████████████░░░░░░░░░  62%
-    → RIGHT   ████░░░░░░░░░░░░░░░░░░░░  12%
-
-  Press Ctrl+C to quit.
+╭──────────────────────────────────────────────────────────────────────────────────╮
+│ JEV / PLAYS 2048                                                          ● LIVE │
+│ State → Jev → Decision → Action, live                                            │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│ +-----+-----+-----+-----+   │  JEV DECISION                                      │
+│ |     |     |  2  |  4  |   │  api.typesafe.ai                                   │
+│ +-----+-----+-----+-----+   │                                                    │
+│ |  8  |     |     |     |   │  NEXT MOVE                                         │
+│ +-----+-----+-----+-----+   │                                                    │
+│ |     |     |  2  |     |   │    ↑ UP     ██░░░░░░░░░░░░░░░░  12%                │
+│ +-----+-----+-----+-----+   │    ↓ DOWN   ███░░░░░░░░░░░░░░░  15%                │
+│ |     |     |  4  |  4  |   │  › ← LEFT   ███████████░░░░░░░  62%                │
+│ +-----+-----+-----+-----+   │    → RIGHT  ██░░░░░░░░░░░░░░░░  11%                │
+│                             │                                                    │
+│                             │  EXECUTING   LEFT                                  │
+│                             │  CONFIDENCE  62%                                   │
+│                             │  LATENCY     312ms                                 │
+│                                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│ SCORE 24    MOVES 9    DECISIONS 9    AVG LATENCY 340ms    BEST TILE 8           │
+│ Illegal-move corrections  0000                                                   │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│ Ctrl+C quit                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────╯
 ```
+
+(rendered in full color in a real terminal — orange/amber tile shading by value, a live "● LIVE / ● THINKING" status pill, and animated probability bars)
 
 ## Install & run
 
@@ -98,7 +102,7 @@ than applying an illegal move.
 ## Local development
 
 ```bash
-git clone <this repo>
+git clone https://github.com/pranay-tecnomi/jev-2048.git
 cd jev-2048
 export JEV_API_KEY=jv_live_...
 node bin/jev-2048.js
