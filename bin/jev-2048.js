@@ -2,17 +2,20 @@
 'use strict'
 
 const { newGame, move, spawnTile, legalMoves, isGameOver, hasWon } = require('../lib/game2048')
-const { decide, JEV_ENDPOINT } = require('../lib/jev')
+const jevEngine = require('../lib/jev')
+const localEngine = require('../lib/localEngine')
 const { renderFrame, Screen } = require('../lib/render')
 
 const DEFAULT_INTERVAL_MS = Number(process.env.JEV_2048_INTERVAL_MS) || 1200
 
 function parseArgs(argv) {
-  const args = { interval: DEFAULT_INTERVAL_MS }
+  const args = { interval: DEFAULT_INTERVAL_MS, engine: 'jev' }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--interval' && argv[i + 1]) {
       args.interval = Number(argv[++i]) || DEFAULT_INTERVAL_MS
+    } else if (a === '--engine' && argv[i + 1]) {
+      args.engine = argv[++i]
     } else if (a === '--help' || a === '-h') {
       args.help = true
     } else if (a === '--version' || a === '-v') {
@@ -24,15 +27,16 @@ function parseArgs(argv) {
 
 function printHelp() {
   console.log(`
-jev-2048 — watch the Jev decision model play 2048 live in your terminal.
+jev-2048 — watch an AI decision model play 2048 live in your terminal.
 
 Usage:
-  jev-2048 [--interval <ms>]
+  jev-2048 [--engine jev|local] [--interval <ms>]
 
 Options:
-  --interval <ms>   Milliseconds between decisions (default: 1200)
-  -v, --version     Print the version and exit
-  -h, --help        Show this help and exit
+  --engine jev|local   Decision engine to use (default: jev)
+  --interval <ms>      Milliseconds between decisions (default: 1200)
+  -v, --version        Print the version and exit
+  -h, --help           Show this help and exit
 
 Controls (while running):
   SPACE   pause / resume
@@ -40,11 +44,15 @@ Controls (while running):
   Q       quit
   Ctrl+C  quit
 
+--engine jev (default): every move is decided by a real call to
+${jevEngine.JEV_ENDPOINT} using your own key — nothing is simulated.
 Requires a Jev API key from https://console.typesafe.ai/keys, set as:
   export JEV_API_KEY=jv_live_...
 
-Every move is decided by a real call to ${JEV_ENDPOINT} using your own key —
-nothing is simulated and no key is sent anywhere but the official Jev API.
+--engine local: runs entirely offline using Laya-CoreML
+(https://github.com/mizorewww/laya-coreml), a separate open-weight model
+running on-device via Core ML. No API key, no network calls at inference
+time. Requires one-time setup — see local-engine/README.md in this repo.
 `)
 }
 
@@ -60,13 +68,31 @@ async function main() {
     return
   }
 
-  const apiKey = process.env.JEV_API_KEY
-  if (!apiKey) {
-    console.error('\nMissing JEV_API_KEY environment variable.')
-    console.error('Get a key from https://console.typesafe.ai/keys, then run:')
-    console.error('  export JEV_API_KEY=jv_live_...\n')
-    process.exitCode = 1
-    return
+  const engineName = args.engine === 'local' ? 'local' : 'jev'
+
+  let apiKey = null
+  let local = null
+
+  if (engineName === 'jev') {
+    apiKey = process.env.JEV_API_KEY
+    if (!apiKey) {
+      console.error('\nMissing JEV_API_KEY environment variable.')
+      console.error('Get a key from https://console.typesafe.ai/keys, then run:')
+      console.error('  export JEV_API_KEY=jv_live_...\n')
+      console.error('Or run fully offline instead with: jev-2048 --engine local\n')
+      process.exitCode = 1
+      return
+    }
+  } else {
+    local = new localEngine.LocalEngine()
+    console.log('\nLoading local model (first load can take a while)...\n')
+    try {
+      await local.start()
+    } catch (err) {
+      console.error('\nFailed to start local engine: ' + err.message + '\n')
+      process.exitCode = 1
+      return
+    }
   }
 
   // --- mutable game state ---
@@ -100,6 +126,8 @@ async function main() {
         errorMessage,
         illegalCorrections,
         bestTile,
+        engineTitle: engineName === 'local' ? 'LAYA DECISION' : 'JEV DECISION',
+        engineHost: engineName === 'local' ? 'local · offline' : 'api.typesafe.ai',
       })
     )
   }
@@ -123,6 +151,7 @@ async function main() {
   function shutdown(message) {
     quit = true
     screen.close()
+    if (local) local.stop()
     if (message) console.log(message)
     process.exit(0)
   }
@@ -177,7 +206,10 @@ async function main() {
 
     let result
     try {
-      result = await decide(apiKey, board, score, moves, legal)
+      result =
+        engineName === 'local'
+          ? await localEngine.decide(local, board, score, moves, legal)
+          : await jevEngine.decide(apiKey, board, score, moves, legal)
     } catch (err) {
       ticking = false
       draw('error', err.message)
