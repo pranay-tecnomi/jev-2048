@@ -30,11 +30,24 @@ the board. Nothing is scripted or simulated.
 │ SCORE 24    MOVES 9    DECISIONS 9    AVG LATENCY 340ms    BEST TILE 8           │
 │ Illegal-move corrections  0000                                                   │
 ├──────────────────────────────────────────────────────────────────────────────────┤
-│ Ctrl+C quit                                                                      │
+│ SPACE pause   R reset   Q quit                                                   │
 ╰──────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-(rendered in full color in a real terminal — orange/amber tile shading by value, a live "● LIVE / ● THINKING" status pill, and animated probability bars)
+(rendered in full color in a real terminal — orange/amber tile shading by value, a
+live "● LIVE / ● THINKING / ● PAUSED" status pill, animated probability bars, and
+smooth in-place frame updates with no clear/flicker between decisions)
+
+## Controls
+
+While running, in a real terminal:
+
+```
+SPACE   pause / resume
+R       reset the game
+Q       quit
+Ctrl+C  quit
+```
 
 ## Install & run
 

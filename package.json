@@ -1,6 +1,6 @@
 {
   "name": "jev-2048",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Watch the Jev decision model (typesafe.ai) play 2048 live in your terminal.",
   "license": "MIT",
   "author": "",
